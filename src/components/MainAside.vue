@@ -35,7 +35,8 @@ img{
 	border-radius: 5px;
 	backdrop-filter: blur(10px); /* 背景模糊 */
 	width: calc(100% - 8px);
-	height: 95%;
+	height: calc(100% - 95px);
 	overflow: hidden;
+	padding-bottom: 60px;
 }
 </style>
