@@ -1,8 +1,13 @@
 <template>
-	<div class="body">Body</div>
+	<div class="body">
+		<MainUpload/>
+	</div>
 </template>
 
-<script setup></script>
+<script setup>
+import MainUpload from './MainUpload.vue';
+
+</script>
 
 <style scoped>
 .body {
