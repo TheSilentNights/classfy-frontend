@@ -50,7 +50,7 @@ const handleChange = (file) => {
 
 	// 生成预览URL
 	imageUrl.value = URL.createObjectURL(file.raw)
-	imgageStroge.setUrl = URL.createObjectURL(file.raw)
+	imgageStroge.setUrl(URL.createObjectURL(file.raw))
 	selectedFile.value = file.raw
 }
 

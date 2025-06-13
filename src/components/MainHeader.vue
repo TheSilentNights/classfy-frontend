@@ -1,10 +1,17 @@
 <template>
     <div class="header">
-        Status
+        <div v-if="linked">Current Linked To:</div>
     </div>
 </template>
 
 <script setup>
+import axios from 'axios';
+import { ref } from 'vue';
+var linked = ref(false)
+
+
+
+
 
 </script>
 

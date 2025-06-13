@@ -12,7 +12,7 @@ export const useImageUrlStore = defineStore('imageUrl', {
 	},
     actions:{
         setUrl(targetUrl){
-            
+            this.url = targetUrl
         }
     }
 })

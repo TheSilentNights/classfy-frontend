@@ -1,7 +1,8 @@
 <template>
 	<div class="aside">
-		<img :src="url" alt="error"/>
-  </div>
+		<div class="row_preview">Preview</div>
+		<img :src="getUrl" alt="error"/>
+  	</div>
 </template>
 
 <script setup>
@@ -12,9 +13,21 @@ const { url, getUrl } = storeToRefs(imageStore)
 </script>
 
 <style scoped>
+.row_preview{
+	width: 100%;
+	height: 60px;
+	color: purple;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+img{
+	width: 80%;
+}
 .aside {
 	display: flex;
 	justify-content: center;
+	flex-direction: column;
 	align-items: center;
 	background-color: rgba(255, 255, 255, 0.792);
 	border: 2px; /* 半透明背景 */
