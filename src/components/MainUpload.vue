@@ -28,11 +28,14 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import axios from 'axios' // 确保已安装axios: npm install axios
+import { useImageUrlStore } from '../store/imageStore'
 
 const imageUrl = ref('')
 const loading = ref(false)
 const uploadResult = ref(null)
 const selectedFile = ref(null)
+const imgageStroge = useImageUrlStore()
+
 
 // 处理文件选择
 const handleChange = (file) => {
@@ -47,6 +50,7 @@ const handleChange = (file) => {
 
 	// 生成预览URL
 	imageUrl.value = URL.createObjectURL(file.raw)
+	imgageStroge.setUrl = URL.createObjectURL(file.raw)
 	selectedFile.value = file.raw
 }
 

@@ -13,7 +13,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.726);
         box-shadow: 0 10px 15px rgba(129, 124, 124, 0.2);
         border: 2px;
         border-radius: 5px;
