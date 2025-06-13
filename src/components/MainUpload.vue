@@ -1,209 +1,147 @@
 <template>
-	<div class="image-upload-container">
-		<el-upload class="upload-demo" action="#" :auto-upload="false" :show-file-list="false" :on-change="handleFileChange" :before-upload="beforeUpload">
-			<template #trigger>
-				<el-button type="primary">选择图片</el-button>
-			</template>
+	<div class="upload-container">
+		<el-upload class="image-uploader" action="#" :auto-upload="false" :show-file-list="false" :on-change="handleChange" :before-upload="beforeUpload">
+			<img v-if="imageUrl" :src="imageUrl" class="uploaded-image" />
+			<el-icon v-else class="uploader-icon"><Plus /></el-icon>
 		</el-upload>
 
-		<el-dialog v-model="dialogVisible" title="图片裁剪" width="50%" @closed="destroyCropper">
-			<div class="cropper-container">
-				<img ref="imageRef" :src="imageUrl" alt="待裁剪图片" class="cropper-image" />
-			</div>
-			<template #footer>
-				<span class="dialog-footer">
-					<el-button @click="dialogVisible = false">取消</el-button>
-					<el-button type="primary" @click="cropImage">确认裁剪</el-button>
-				</span>
-			</template>
-		</el-dialog>
+		<div class="preview-container" v-if="imageUrl">
+			<h3>预览</h3>
+			<el-image :src="imageUrl" fit="contain" class="preview-image" />
+		</div>
 
-		<div v-if="croppedImage" class="preview-container">
-			<h3>裁剪结果预览</h3>
-			<img :src="croppedImage" alt="裁剪结果" class="preview-image" />
-			<el-button type="success" @click="uploadImage" :loading="uploading">上传到服务器</el-button>
+		<div class="action-buttons">
+			<el-button type="primary" :loading="loading" :disabled="!imageUrl" @click="submitUpload">
+				{{ loading ? '上传中...' : '上传到服务器' }}
+			</el-button>
+			<el-button @click="resetUpload" :disabled="loading">重置</el-button>
+		</div>
+
+		<div v-if="uploadResult" class="result-message">
+			<el-alert :title="uploadResult.message" :type="uploadResult.success ? 'success' : 'error'" show-icon />
 		</div>
 	</div>
 </template>
 
 <script setup>
-import { ref, nextTick, onBeforeUnmount } from 'vue'
-import Cropper from 'cropperjs'
-
-import axios from 'axios'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { CropperCanvas } from 'cropperjs'
+import { Plus } from '@element-plus/icons-vue'
+import axios from 'axios' // 确保已安装axios: npm install axios
 
-const dialogVisible = ref(false)
 const imageUrl = ref('')
-const imageRef = ref(null)
-const cropperInstance = ref(null) // 重命名为 cropperInstance
-const croppedImage = ref('')
-const uploading = ref(false)
+const loading = ref(false)
+const uploadResult = ref(null)
+const selectedFile = ref(null)
 
-// 文件类型和大小验证
-const beforeUpload = (file) => {
-	const isImage = file.type.startsWith('image/')
-	const isLt5M = file.size / 1024 / 1024 < 5
+// 处理文件选择
+const handleChange = (file) => {
+	if (!file.raw) return
 
+	// 验证图片类型
+	const isImage = file.raw.type.startsWith('image/')
 	if (!isImage) {
 		ElMessage.error('只能上传图片文件!')
-		return false
+		return
 	}
+
+	// 生成预览URL
+	imageUrl.value = URL.createObjectURL(file.raw)
+	selectedFile.value = file.raw
+}
+
+// 上传前验证
+const beforeUpload = (file) => {
+	const isLt5M = file.size / 1024 / 1024 < 5
 	if (!isLt5M) {
 		ElMessage.error('图片大小不能超过5MB!')
 		return false
 	}
-
 	return true
 }
 
-const handleFileChange = (file) => {
-	if (!beforeUpload(file.raw)) return
+// 提交到服务器
+const submitUpload = async () => {
+	if (!selectedFile.value) return
 
-	const reader = new FileReader()
-	reader.onload = (e) => {
-		imageUrl.value = e.target.result
-		dialogVisible.value = true
-
-		nextTick(() => {
-			initCropper()
-		})
-	}
-	reader.readAsDataURL(file.raw)
-}
-
-// 初始化Cropper
-const initCropper = () => {
-	// 确保DOM元素存在
-	if (!imageRef.value) return
-
-	// 销毁旧的Cropper实例
-	destroyCropper()
-
-	// 创建新的Cropper实例
-	cropperInstance.value = new Cropper(imageRef.value, {
-		aspectRatio: 1, // 裁剪比例（1:1正方形）
-		viewMode: 1,
-		autoCropArea: 0.8,
-		movable: true,
-		zoomable: true,
-		rotatable: true,
-		minContainerWidth: 300,
-		minContainerHeight: 300,
-		background: false,
-		checkCrossOrigin: false,
-
-		// 错误处理
-		error: (err) => {
-			console.error('Cropper error:', err)
-			ElMessage.error('图片裁剪器初始化失败')
-			dialogVisible.value = false
-		},
-	})
-}
-
-// 销毁Cropper实例
-const destroyCropper = () => {
-	if (cropperInstance.value) {
-		cropperInstance.value.destroy()
-		cropperInstance.value = null
-	}
-}
-
-const cropImage = () => {
-	// 确保Cropper实例存在且有getCroppedCanvas方法
-	if (!cropperInstance.value || typeof cropperInstance.value.getCropperCanvas !== 'function') {
-		ElMessage.error('裁剪器未正确初始化')
-		return
-	}
+	loading.value = true
+	uploadResult.value = null
 
 	try {
-		const canvas = cropperInstance.value.getCropperCanvas({
-			width: 500,
-			height: 500,
-			imageSmoothingEnabled: true,
-			imageSmoothingQuality: 'high',
-		})
-
-		// 转换为DataURL
-		console.log(canvas.children)
-		croppedImage.value = canvas.children[0].src
-		dialogVisible.value = false
-	} catch (error) {
-		console.error('裁剪失败:', error)
-		ElMessage.error('图片裁剪失败: ' + error.message)
-	}
-}
-
-const uploadImage = async () => {
-	if (!croppedImage.value) return
-
-	uploading.value = true
-
-	try {
-		const blob = dataURLtoBlob(croppedImage.value)
 		const formData = new FormData()
-		formData.append('image', blob, 'cropped-image.jpg')
+		formData.append('image', selectedFile.value)
 
-		// 发送到后端（替换为你的API地址）
-		const response = await axios.post('https://your-api.com/upload', formData, {
+		// 替换为你的实际API地址
+		const response = await axios.post('https://your-api-endpoint/upload', formData, {
 			headers: {
 				'Content-Type': 'multipart/form-data',
 			},
 		})
 
-		ElMessage.success('上传成功！')
-		console.log('服务器响应:', response.data)
+		uploadResult.value = {
+			success: true,
+			message: `上传成功! 服务器路径: ${response.data.path}`,
+		}
+
+		ElMessage.success('图片上传成功')
 	} catch (error) {
 		console.error('上传失败:', error)
-		ElMessage.error('上传失败: ' + error.message)
+		uploadResult.value = {
+			success: false,
+			message: `上传失败: ${error.response?.data?.message || error.message}`,
+		}
+		ElMessage.error('图片上传失败')
 	} finally {
-		uploading.value = false
+		loading.value = false
 	}
 }
 
-// 辅助函数：将DataURL转换为Blob
-function dataURLtoBlob(dataurl) {
-	const arr = dataurl.split(',')
-	const mime = arr[0].match(/:(.*?);/)[1]
-	const bstr = atob(arr[1])
-	const n = bstr.length
-	const u8arr = new Uint8Array(n)
-
-	for (let i = 0; i < n; i++) {
-		u8arr[i] = bstr.charCodeAt(i)
-	}
-
-	return new Blob([u8arr], { type: mime })
+// 重置上传状态
+const resetUpload = () => {
+	imageUrl.value = ''
+	selectedFile.value = null
+	uploadResult.value = null
 }
-
-// 组件卸载前清理
-onBeforeUnmount(() => {
-	destroyCropper()
-})
 </script>
 
 <style scoped>
-.image-upload-container {
-	max-width: 800px;
+.upload-container {
+	max-width: 600px;
 	margin: 20px auto;
 	padding: 20px;
 	border: 1px solid #ebeef5;
 	border-radius: 8px;
-	box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+	background: #fff;
 }
 
-.cropper-container {
-	width: 100%;
-	height: 400px;
+.image-uploader {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 200px;
+	height: 200px;
+	border: 1px dashed #d9d9d9;
+	border-radius: 6px;
+	cursor: pointer;
+	position: relative;
 	overflow: hidden;
+	margin: 0 auto;
+	transition: border-color 0.3s;
 }
 
-.cropper-image {
-	display: block;
-	max-width: 100%;
-	max-height: 100%;
+.image-uploader:hover {
+	border-color: #409eff;
+}
+
+.uploader-icon {
+	font-size: 28px;
+	color: #8c939d;
+}
+
+.uploaded-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .preview-container {
@@ -212,10 +150,18 @@ onBeforeUnmount(() => {
 }
 
 .preview-image {
-	max-width: 300px;
+	max-width: 100%;
 	max-height: 300px;
-	margin: 15px 0;
-	border: 1px solid #dcdfe6;
 	border-radius: 4px;
+	box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons {
+	margin-top: 20px;
+	text-align: center;
+}
+
+.result-message {
+	margin-top: 20px;
 }
 </style>
