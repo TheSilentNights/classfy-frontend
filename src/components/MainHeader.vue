@@ -9,7 +9,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { backendUrlStorge } from '../store/backendUrlStorge'
 import { storeToRefs } from 'pinia'
 const urlStorge = backendUrlStorge() //后端储存
