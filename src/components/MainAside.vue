@@ -1,7 +1,7 @@
 <template>
 	<div class="aside">
 		<div class="row_preview">Preview</div>
-		<img :src="getUrl" alt="error"/>
+		<img :src="url" alt="error"/>
   	</div>
 </template>
 

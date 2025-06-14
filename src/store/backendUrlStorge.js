@@ -1,12 +1,12 @@
+import axios, { formToJSON } from 'axios'
 import { defineStore } from 'pinia'
+import sendGet from '../js/Request'
 
-const backendUrlStorge = defineStore('backendUrlStorge', {
-	state: () => {
-		return {
-			url: '',
-			linked: false,
-		}
-	},
+export const backendUrlStorge = defineStore('backendUrlStorge', {
+	state: () => ({
+        url: 'http://127.0.0.1:7777',
+        linked: false
+    }),
     getters:{
         getUrl(state){
             return state.url
@@ -15,13 +15,21 @@ const backendUrlStorge = defineStore('backendUrlStorge', {
             return state.linked
         }
     },
-
     actions:{
-        connected:()=>{
-            this.state.linked = true
+        connected(){
+            this.linked = true
         },
-        disconnected:()=>{
-            this.state.linked = false
+        disconnected(){
+            this.linked = false
+        },
+        async testConnection() {
+            const result = await sendGet(this.url + '/api/health') //等待结果
+            console.log(result)
+            if(result.data.status == "success"){
+                this.linked = true
+            }else{
+                this.linked = false
+            }
         }
     }
 })
