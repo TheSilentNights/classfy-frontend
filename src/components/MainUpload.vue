@@ -8,12 +8,14 @@
 			<el-button class="ml-3" type="info" @click="startClassification">开始分类</el-button>
 		</el-upload>
 
-		<div v-if="imageUrl" class="mt-4">
+		<div v-if="imageUrl && !classified" class="mt-4">
 			<h3>预览:</h3>
 			<img :src="imageUrl" alt="Preview" class="preview-image" />
 		</div>
-
-		<div v-if="responseMessage" class="mt-4">
+		<div v-if="classified" class="mt-4">
+			<h3>分类结果:{{ result }}</h3>
+		</div>
+		<div v-if="responseMessage && !classified" class="mt-4">
 			<el-alert :title="responseMessage" :type="responseType" />
 		</div>
 	</div>
@@ -22,12 +24,16 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { useImageUrlStore } from '../store/imageStore'
 
 const file = ref(null)
 const imageUrl = ref('')
 const responseMessage = ref('')
 const responseType = ref('')
 const filename = ref('')
+const classified = ref(false)
+const result = ref('')
+const imageStorge = useImageUrlStore()
 
 const handleChange = (uploadFile) => {
 	file.value = uploadFile.raw
@@ -59,8 +65,9 @@ const submitUpload = async () => {
 		})
 
 		responseMessage.value = `上传成功: ${response.data.filename}`
-		filename.value = response.data.filename
-		responseType.value = 'success'
+		filename.value = response.data.filename //保存文件名
+		imageStorge.setUrl(imageUrl.value) // 保存图片URL到store
+		responseType.value = 'success'//设置响应类型为成功
 	} catch (error) {
 		responseMessage.value = `上传失败: ${error.response?.data?.error || error.message}`
 		responseType.value = 'error'
@@ -68,11 +75,18 @@ const submitUpload = async () => {
 }
 
 async function startClassification() {
-	const responce = await axios.get('http://localhost:7777/api/classify',{
+	const response = await axios.get('http://localhost:7777/api/classify',{
 		params: {
 			filename: filename.value
-		}
+		},
+		headers: {
+			'Content-Type': 'application/json',
+			'Accept': 'application/json',
+		},
 	})
+	classified.value = true
+	result.value = response.data.categeory
+	console.log(response.data)
 }
 </script>
 

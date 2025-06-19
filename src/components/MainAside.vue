@@ -1,6 +1,6 @@
 <template>
 	<div class="aside">
-		<div class="row_preview">Preview</div>
+		<div class="row_preview">Current Image</div>
 		<img :src="url" alt="error"/>
   	</div>
 </template>
