@@ -25,7 +25,7 @@
             <el-alert :title="responseMessage" :type="responseType"/>
         </div>
         <div class="recommend" v-if="classified">
-            <span>例题:</span>
+            <span>推荐习题:</span>
             <p v-for="text in recommend.recommendArr" :key="text" class="recommend_text">{{ text }}</p>
         </div>
 
@@ -56,7 +56,7 @@ const handleChange = (uploadFile) => {
     // 创建预览图
     const reader = new FileReader()
     reader.onload = (e) => {
-        imageUrl.value = e.target.result
+        imageUrl.value = e.target.result //获取html元素
     }
     reader.readAsDataURL(file.value)
 
@@ -93,6 +93,7 @@ async function submitUpload() {
 }
 
 async function startClassification() {
+    onloading.value = true
     const response = await axios.get('http://localhost:7777/api/classify', {
         params: {
             filename: filename.value
@@ -102,9 +103,28 @@ async function startClassification() {
             'Accept': 'application/json',
         },
     })
+    onloading.value = false
     classified.value = true
-    category.value = response.data.category
-    recommend = reactive({ recommendArr: response.data.recommend.split(";") })
+    switch (response.data.category) {
+        case '0':
+            category.value = '几何变换'
+            break
+        case '1':
+            category.value = '空间中的位置关系'
+            break
+        case '2':
+            category.value = '空间中的距离计算'
+            break
+        case '3':
+            category.value = '多面体的性质与计算'
+            break
+        case '4':
+            category.value = '空间中的角度'
+            break
+        default:
+            category.value = '获取到错误分类，请检查后端代码'
+    }
+    recommend = reactive({ recommendArr: response.data.recommend.split(";") }) //分割后端字符串并转存为响应式数组
     console.log(recommend.recommendArr)
 }
 </script>
